@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -9,13 +9,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter'
 import { useAuth } from '@/context/AuthContext'
 
-const schema = z.object({
-  fullName: z.string().min(2, 'Informe seu nome completo'),
-  email: z.string().email('E-mail inválido'),
-  password: z.string().min(6, 'Mínimo de 6 caracteres'),
-})
+const schema = z
+  .object({
+    fullName: z.string().min(2, 'Informe seu nome completo'),
+    email: z.string().email('E-mail inválido'),
+    password: z.string().min(6, 'Mínimo de 6 caracteres'),
+    confirmPassword: z.string().min(6, 'Mínimo de 6 caracteres'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+  })
 
 type FormValues = z.infer<typeof schema>
 
@@ -27,8 +34,11 @@ export function RegisterPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
+
+  const password = useWatch({ control, name: 'password', defaultValue: '' })
 
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true)
@@ -69,6 +79,17 @@ export function RegisterPage() {
               <Label htmlFor="password">Senha</Label>
               <Input id="password" type="password" autoComplete="new-password" {...register('password')} />
               {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+              <PasswordStrengthMeter password={password} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="confirmPassword">Confirmar senha</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                {...register('confirmPassword')}
+              />
+              {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={submitting}>
               Criar conta
