@@ -20,6 +20,7 @@ export type Category = {
   slug: string
   name: string
   icon: string
+  cover_url: string | null
   created_at: string
 }
 
@@ -39,6 +40,8 @@ export type Service = {
   lng: number | null
   rating_avg: number
   rating_count: number
+  tags: string[]
+  is_featured: boolean
   created_at: string
   updated_at: string
 }
@@ -114,7 +117,28 @@ export type NearbyService = {
   lng: number | null
   rating_avg: number
   rating_count: number
+  tags: string[]
+  is_featured: boolean
   distance_km: number
+}
+
+export type FeaturedService = {
+  id: string
+  title: string
+  description: string
+  price: number | null
+  price_type: PriceType
+  city: string | null
+  state: string | null
+  rating_avg: number
+  rating_count: number
+  tags: string[]
+  is_featured: boolean
+  category_slug: string
+  category_name: string
+  provider_name: string
+  provider_avatar: string | null
+  cover_url: string | null
 }
 
 type Relationships = {
@@ -176,6 +200,10 @@ export type Database = {
       nearby_services: {
         Args: { search_lat: number; search_lng: number; radius_km?: number; category_slug?: string | null }
         Returns: NearbyService[]
+      }
+      featured_services: {
+        Args: { limit_count?: number }
+        Returns: FeaturedService[]
       }
     }
   }

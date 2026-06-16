@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, ShieldCheck, Star, Zap } from 'lucide-react'
+import { ArrowRight, Search, ShieldCheck, Star, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { FeaturedServiceCard } from '@/components/services/FeaturedServiceCard'
 import { useCategories } from '@/hooks/useCategories'
+import { useFeaturedServices } from '@/hooks/useServices'
 
 const STEPS = [
   {
@@ -22,27 +25,46 @@ const STEPS = [
   },
 ]
 
+const HERO_IMAGE = 'https://loremflickr.com/1280/720/handyman,service?lock=4242'
+
 export function HomePage() {
   const { categories } = useCategories()
+  const { services: featured, loading: featuredLoading } = useFeaturedServices(8)
 
   return (
     <div>
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-16 text-center sm:py-24">
-          <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
+      <section className="relative overflow-hidden">
+        <img
+          src={HERO_IMAGE}
+          alt=""
+          className="absolute inset-0 size-full object-cover"
+          aria-hidden
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/75 to-primary/55" />
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-20 text-center text-primary-foreground sm:py-28">
+          <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+            Profissionais avaliados perto de você
+          </span>
+          <h1 className="max-w-2xl text-4xl font-bold tracking-tight drop-shadow-sm sm:text-5xl">
             Encontre os melhores prestadores de serviço perto de você
           </h1>
-          <p className="max-w-xl text-lg text-muted-foreground">
+          <p className="max-w-xl text-lg text-primary-foreground/90">
             Limpeza, reformas, beleza, aulas e muito mais. Tudo num só lugar, com avaliações reais e chat direto.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button size="lg" asChild>
+            <Button size="lg" variant="secondary" asChild>
               <Link to="/explorar">
-                Explorar serviços <ArrowRight />
+                <Search /> Explorar serviços
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/cadastro">Quero anunciar meus serviços</Link>
+            <Button
+              size="lg"
+              asChild
+              className="bg-white/15 text-primary-foreground backdrop-blur hover:bg-white/25"
+            >
+              <Link to="/cadastro">
+                Quero anunciar <ArrowRight />
+              </Link>
             </Button>
           </div>
         </div>
@@ -52,14 +74,22 @@ export function HomePage() {
         <h2 className="mb-6 text-2xl font-semibold">Categorias populares</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {categories.map((category) => (
-            <Link key={category.id} to={`/explorar?categoria=${category.slug}`}>
-              <Card className="h-full transition-shadow hover:shadow-md">
-                <CardContent className="flex flex-col items-center gap-2 p-4 text-center">
-                  <span className="flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                    {category.name[0]}
+            <Link key={category.id} to={`/explorar?categoria=${category.slug}`} className="group">
+              <Card className="h-full overflow-hidden p-0 transition-shadow hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+                  {category.cover_url && (
+                    <img
+                      src={category.cover_url}
+                      alt={category.name}
+                      loading="lazy"
+                      className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
+                  <span className="absolute inset-x-0 bottom-0 p-3 text-sm font-semibold text-white">
+                    {category.name}
                   </span>
-                  <span className="text-sm font-medium">{category.name}</span>
-                </CardContent>
+                </div>
               </Card>
             </Link>
           ))}
@@ -67,19 +97,40 @@ export function HomePage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-12">
-        <h2 className="mb-6 text-2xl font-semibold">Como funciona</h2>
-        <div className="grid gap-6 sm:grid-cols-3">
-          {STEPS.map((step) => (
-            <Card key={step.title}>
-              <CardContent className="space-y-3 p-6">
-                <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <step.icon className="size-5" />
-                </span>
-                <h3 className="font-semibold">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="mb-6 flex items-end justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold">Em destaque</h2>
+            <p className="text-sm text-muted-foreground">Os serviços mais bem avaliados da plataforma.</p>
+          </div>
+          <Button variant="ghost" asChild className="shrink-0">
+            <Link to="/explorar">
+              Ver todos <ArrowRight />
+            </Link>
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {featuredLoading
+            ? Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} className="aspect-[3/4] w-full" />)
+            : featured.map((service) => <FeaturedServiceCard key={service.id} service={service} />)}
+        </div>
+      </section>
+
+      <section className="bg-muted/40">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <h2 className="mb-6 text-2xl font-semibold">Como funciona</h2>
+          <div className="grid gap-6 sm:grid-cols-3">
+            {STEPS.map((step) => (
+              <Card key={step.title}>
+                <CardContent className="space-y-3 p-6">
+                  <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <step.icon className="size-5" />
+                  </span>
+                  <h3 className="font-semibold">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
     </div>

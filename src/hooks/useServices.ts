@@ -1,6 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { NearbyService, Service, ServicePhoto, ServiceWithRelations } from '@/types/database'
+import type { FeaturedService, NearbyService, Service, ServicePhoto, ServiceWithRelations } from '@/types/database'
+
+export function useFeaturedServices(limit = 8) {
+  const [services, setServices] = useState<FeaturedService[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase
+      .rpc('featured_services', { limit_count: limit })
+      .then(({ data }) => {
+        setServices(data ?? [])
+        setLoading(false)
+      })
+  }, [limit])
+
+  return { services, loading }
+}
 
 interface NearbyFilters {
   lat: number

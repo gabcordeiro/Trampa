@@ -112,6 +112,15 @@ export function ServiceDetailPage() {
             </p>
           )}
           <p className="whitespace-pre-line text-muted-foreground">{service.description}</p>
+          {service.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {service.tags.map((tag) => (
+                <Badge key={tag} variant="outline" className="font-normal">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="w-full shrink-0 space-y-4 rounded-xl border border-border p-5 sm:w-64">
