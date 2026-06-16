@@ -164,7 +164,7 @@ export function ExplorePage() {
         <div className={cn('h-[420px] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]', view === 'list' && 'hidden sm:block')}>
           {lat !== null && lng !== null && (
             <Suspense fallback={<Skeleton className="h-full w-full" />}>
-              <ServicesMap services={services} centerLat={lat} centerLng={lng} />
+              <ServicesMap key={`${lat},${lng}`} services={services} centerLat={lat} centerLng={lng} />
             </Suspense>
           )}
         </div>

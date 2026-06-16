@@ -1,10 +1,7 @@
-import { useMemo, useState } from 'react'
-import { Map, Marker, NavigationControl, Popup } from 'react-map-gl/mapbox'
-import { Link } from 'react-router-dom'
-import { MapPin } from 'lucide-react'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import { useEffect, useRef } from 'react'
 import { formatCurrency } from '@/lib/utils'
 import type { NearbyService } from '@/types/database'
+import 'leaflet/dist/leaflet.css'
 
 interface ServicesMapProps {
   services: NearbyService[]
@@ -12,70 +9,73 @@ interface ServicesMapProps {
   centerLng: number
 }
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
-
 export function ServicesMap({ services, centerLat, centerLng }: ServicesMapProps) {
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<import('leaflet').Map | null>(null)
 
-  const activeService = useMemo(
-    () => services.find((service) => service.id === activeId) ?? null,
-    [services, activeId],
-  )
+  useEffect(() => {
+    if (!containerRef.current) return
+    if (mapRef.current) return // already initialised
 
-  if (!MAPBOX_TOKEN) {
-    return (
-      <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-border bg-muted text-sm text-muted-foreground">
-        Configure VITE_MAPBOX_TOKEN para exibir o mapa.
-      </div>
-    )
-  }
+    let map: import('leaflet').Map
 
-  return (
-    <Map
-      mapboxAccessToken={MAPBOX_TOKEN}
-      initialViewState={{ longitude: centerLng, latitude: centerLat, zoom: 12 }}
-      mapStyle="mapbox://styles/mapbox/streets-v12"
-      style={{ width: '100%', height: '100%', borderRadius: '0.75rem' }}
-    >
-      <NavigationControl position="top-right" />
+    import('leaflet').then((L) => {
+      // Fix Leaflet's default icon paths that break in Vite builds
+      delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
+      L.Icon.Default.mergeOptions({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      })
 
-      <Marker longitude={centerLng} latitude={centerLat} anchor="center">
-        <div className="size-4 rounded-full border-2 border-white bg-blue-500 shadow" />
-      </Marker>
+      map = L.map(containerRef.current!, { zoomControl: true }).setView([centerLat, centerLng], 13)
+      mapRef.current = map
 
-      {services
-        .filter((service) => service.lat !== null && service.lng !== null)
-        .map((service) => (
-          <Marker
-            key={service.id}
-            longitude={service.lng!}
-            latitude={service.lat!}
-            anchor="bottom"
-            onClick={(event) => {
-              event.originalEvent.stopPropagation()
-              setActiveId(service.id)
-            }}
-          >
-            <MapPin className="size-7 cursor-pointer fill-primary text-primary drop-shadow" />
-          </Marker>
-        ))}
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(map)
 
-      {activeService && activeService.lat !== null && activeService.lng !== null && (
-        <Popup
-          longitude={activeService.lng}
-          latitude={activeService.lat}
-          anchor="top"
-          onClose={() => setActiveId(null)}
-          closeOnClick={false}
-        >
-          <Link to={`/servicos/${activeService.id}`} className="block min-w-40 space-y-1 p-1">
-            <p className="line-clamp-1 font-semibold text-sm">{activeService.title}</p>
-            <p className="text-xs text-muted-foreground">
-              {activeService.price ? formatCurrency(activeService.price) : 'A combinar'}
-            </p>
-          </Link>
-        </Popup>
-      )}
-    </Map>
-  )
+      // User position marker (blue dot)
+      const userIcon = L.divIcon({
+        html: '<div class="size-4 rounded-full border-2 border-white bg-blue-500 shadow-md"></div>',
+        className: '',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      })
+      L.marker([centerLat, centerLng], { icon: userIcon }).addTo(map)
+
+      // Service markers
+      const pinIcon = L.divIcon({
+        html: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" class="text-primary drop-shadow"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>',
+        className: 'text-primary',
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+        popupAnchor: [0, -28],
+      })
+
+      services
+        .filter((s) => s.lat !== null && s.lng !== null)
+        .forEach((s) => {
+          const price =
+            s.price_type === 'quote' || s.price === null ? 'A combinar' : formatCurrency(s.price)
+          const popup = L.popup({ closeButton: true, minWidth: 160 }).setContent(`
+            <a href="/servicos/${s.id}" class="block space-y-1 no-underline">
+              <p class="font-semibold text-sm leading-tight line-clamp-2 text-foreground">${s.title}</p>
+              <p class="text-xs text-muted-foreground">${price}</p>
+            </a>
+          `)
+          L.marker([s.lat!, s.lng!], { icon: pinIcon }).bindPopup(popup).addTo(map)
+        })
+    })
+
+    return () => {
+      map?.remove()
+      mapRef.current = null
+    }
+    // intentionally run once — parent re-mounts on coord change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return <div ref={containerRef} className="size-full rounded-xl" />
 }

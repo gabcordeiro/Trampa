@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
+import { PhotoLightbox } from '@/components/ui/photo-lightbox'
 import { StarRating } from '@/components/contracts/StarRating'
 import { getServiceWithRelations } from '@/hooks/useServices'
 import { useServiceReviews } from '@/hooks/useReviews'
@@ -24,6 +25,7 @@ export function ServiceDetailPage() {
   const [service, setService] = useState<ServiceWithRelations | null>(null)
   const [loading, setLoading] = useState(true)
   const [hiring, setHiring] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const { reviews } = useServiceReviews(id)
 
   useEffect(() => {
@@ -35,10 +37,7 @@ export function ServiceDetailPage() {
   }, [id])
 
   const handleHire = async () => {
-    if (!user) {
-      navigate('/login')
-      return
-    }
+    if (!user) { navigate('/login'); return }
     if (!service) return
     if (user.id === service.provider_id) {
       toast.error('Você não pode contratar seu próprio serviço.')
@@ -74,24 +73,58 @@ export function ServiceDetailPage() {
     return <p className="py-20 text-center text-muted-foreground">Serviço não encontrado.</p>
   }
 
-  const cover = service.photos[0]?.url
+  const photoUrls = service.photos.map((p) => p.url)
+  const total = photoUrls.length
+
+  const openLightbox = (index: number) => setLightboxIndex(index)
+  const closeLightbox = () => setLightboxIndex(null)
+  const goPrev = () => setLightboxIndex((i) => (i === null ? 0 : (i - 1 + total) % total))
+  const goNext = () => setLightboxIndex((i) => (i === null ? 0 : (i + 1) % total))
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
+      {/* Photo grid */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted sm:col-span-2">
-          {cover ? (
-            <img src={cover} alt={service.title} className="size-full object-cover" />
+        <button
+          className="sm:col-span-2 aspect-[4/3] overflow-hidden rounded-xl bg-muted text-left"
+          onClick={() => photoUrls.length > 0 && openLightbox(0)}
+        >
+          {photoUrls[0] ? (
+            <img
+              src={photoUrls[0]}
+              alt={service.title}
+              className="size-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+            />
           ) : (
             <div className="flex size-full items-center justify-center text-muted-foreground">Sem foto</div>
           )}
-        </div>
-        {service.photos.slice(1).map((photo) => (
-          <div key={photo.id} className="aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-            <img src={photo.url} alt="" className="size-full object-cover" />
-          </div>
+        </button>
+
+        {service.photos.slice(1).map((photo, i) => (
+          <button
+            key={photo.id}
+            className="aspect-[4/3] overflow-hidden rounded-xl bg-muted text-left"
+            onClick={() => openLightbox(i + 1)}
+          >
+            <img
+              src={photo.url}
+              alt=""
+              className="size-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+            />
+          </button>
         ))}
       </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <PhotoLightbox
+          photos={photoUrls}
+          index={lightboxIndex}
+          onClose={closeLightbox}
+          onPrev={goPrev}
+          onNext={goNext}
+        />
+      )}
 
       <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:justify-between">
         <div className="space-y-3">
