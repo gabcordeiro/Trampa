@@ -26,6 +26,7 @@ export function ContractsPage() {
             <TabsTrigger value="pending">Pendente</TabsTrigger>
             <TabsTrigger value="accepted">Aceito</TabsTrigger>
             <TabsTrigger value="in_progress">Em andamento</TabsTrigger>
+            <TabsTrigger value="awaiting_confirmation">Aguard. confirmação</TabsTrigger>
             <TabsTrigger value="completed">Concluído</TabsTrigger>
             <TabsTrigger value="cancelled">Cancelado</TabsTrigger>
           </TabsList>
@@ -58,6 +59,9 @@ export function ContractsPage() {
                       </p>
                       {contract.price && (
                         <p className="text-sm text-muted-foreground">{formatCurrency(contract.price)}</p>
+                      )}
+                      {isClient && contract.status === 'awaiting_confirmation' && (
+                        <p className="mt-1 text-xs font-medium text-amber-600">⚠ Confirme o recebimento do serviço</p>
                       )}
                     </div>
                     <ContractStatusBadge status={contract.status} />

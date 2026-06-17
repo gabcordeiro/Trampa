@@ -75,13 +75,14 @@ export function ContractDetailPage() {
           <Separator />
 
           <div className="flex flex-wrap gap-2">
+            {/* Provider actions */}
             {isProvider && contract.status === 'pending' && (
               <>
                 <Button size="sm" disabled={updating} onClick={() => handleStatusChange('accepted')}>
                   Aceitar
                 </Button>
                 <Button size="sm" variant="outline" disabled={updating} onClick={() => handleStatusChange('cancelled')}>
-                  Rejeitar
+                  Recusar
                 </Button>
               </>
             )}
@@ -91,9 +92,24 @@ export function ContractDetailPage() {
               </Button>
             )}
             {isProvider && contract.status === 'in_progress' && (
-              <Button size="sm" disabled={updating} onClick={() => handleStatusChange('completed')}>
-                Marcar como concluído
+              <Button size="sm" disabled={updating} onClick={() => handleStatusChange('awaiting_confirmation')}>
+                Concluir serviço
               </Button>
+            )}
+            {isProvider && contract.status === 'awaiting_confirmation' && (
+              <p className="text-sm text-muted-foreground">
+                ⏳ Aguardando o cliente confirmar o recebimento.
+              </p>
+            )}
+
+            {/* Client actions */}
+            {isClient && contract.status === 'awaiting_confirmation' && (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <p className="text-sm text-muted-foreground">O prestador marcou o serviço como concluído.</p>
+                <Button size="sm" disabled={updating} onClick={() => handleStatusChange('completed')}>
+                  Confirmar recebimento ✓
+                </Button>
+              </div>
             )}
             {isClient && ['pending', 'accepted'].includes(contract.status) && (
               <Button size="sm" variant="outline" disabled={updating} onClick={() => handleStatusChange('cancelled')}>

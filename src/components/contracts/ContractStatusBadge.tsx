@@ -5,6 +5,7 @@ const STATUS_CONFIG: Record<ContractStatus, { label: string; variant: 'secondary
   pending: { label: 'Pendente', variant: 'secondary' },
   accepted: { label: 'Aceito', variant: 'accent' },
   in_progress: { label: 'Em andamento', variant: 'accent' },
+  awaiting_confirmation: { label: 'Aguardando confirmação', variant: 'accent' },
   completed: { label: 'Concluído', variant: 'success' },
   cancelled: { label: 'Cancelado', variant: 'destructive' },
 }

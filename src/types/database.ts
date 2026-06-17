@@ -1,6 +1,6 @@
 export type ServiceStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'paused'
 export type PriceType = 'fixed' | 'hourly' | 'quote'
-export type ContractStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled'
+export type ContractStatus = 'pending' | 'accepted' | 'in_progress' | 'awaiting_confirmation' | 'completed' | 'cancelled'
 
 export type Plan = 'free' | 'pro'
 
