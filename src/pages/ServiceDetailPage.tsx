@@ -16,6 +16,7 @@ import { createContract } from '@/hooks/useContracts'
 import { useAuth } from '@/context/AuthContext'
 import { formatCurrency, initialsFromName } from '@/lib/utils'
 import type { ServiceWithRelations } from '@/types/database'
+import { ServiceLocationMap } from '@/components/map/ServiceLocationMap'
 
 const APP_URL = import.meta.env.VITE_APP_URL ?? 'https://trampa-omega.vercel.app'
 
@@ -190,6 +191,16 @@ export function ServiceDetailPage() {
           </div>
         </div>
       </div>
+
+      {service.lat !== null && service.lng !== null && (
+        <>
+          <Separator className="my-6" />
+          <div>
+            <h2 className="mb-3 text-lg font-semibold">Localização</h2>
+            <ServiceLocationMap lat={service.lat} lng={service.lng} title={service.title} />
+          </div>
+        </>
+      )}
 
       <Separator className="my-8" />
 
