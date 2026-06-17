@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { List, MapIcon, Search, SlidersHorizontal, X } from 'lucide-react'
+import { LayoutGrid, LayoutList, List, MapIcon, Search, SlidersHorizontal, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -44,6 +44,7 @@ function sortServices(services: NearbyService[], sort: SortOption): NearbyServic
 
 export function ExplorePage() {
   const [view, setView] = useState<'list' | 'map'>('list')
+  const [displayMode, setDisplayMode] = useState<'grid' | 'list'>('list')
   const [sort, setSort] = useState<SortOption>('relevance')
   const [thumbnails, setThumbnails] = useState<Record<string, string[]>>({})
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -191,8 +192,26 @@ export function ExplorePage() {
 
         {/* Results column */}
         <div className="min-w-0 flex-1">
-          {/* Sort row */}
-          <div className="mb-4 flex items-center justify-end">
+          {/* Sort + display mode toggle row */}
+          <div className="mb-4 flex items-center justify-between gap-2">
+            {/* Display mode toggle */}
+            <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+              <button
+                onClick={() => setDisplayMode('list')}
+                className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${displayMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Visualização em lista"
+              >
+                <LayoutList className="size-3.5" /> Lista
+              </button>
+              <button
+                onClick={() => setDisplayMode('grid')}
+                className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${displayMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Visualização em grade"
+              >
+                <LayoutGrid className="size-3.5" /> Grade
+              </button>
+            </div>
+
             <Select value={sort} onValueChange={(value) => setSort(value as SortOption)}>
               <SelectTrigger className="w-44">
                 <SelectValue />
@@ -209,13 +228,25 @@ export function ExplorePage() {
 
           <div className={cn(view === 'map' && 'hidden lg:block')}>
             {loading ? (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <div className={displayMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-2 gap-4 sm:grid-cols-3'}>
                 {Array.from({ length: 6 }).map((_, index) => (
-                  <Skeleton key={index} className="aspect-[4/3] w-full" />
+                  <Skeleton key={index} className={displayMode === 'list' ? 'h-36 w-full' : 'aspect-[4/3] w-full'} />
                 ))}
               </div>
             ) : services.length === 0 ? (
               <p className="py-12 text-center text-muted-foreground">{emptyMessage}</p>
+            ) : displayMode === 'list' ? (
+              <div className="flex flex-col gap-3">
+                {sortedServices.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    categoryName={categoryNameById[service.category_id]}
+                    photos={thumbnails[service.id] ?? []}
+                    layout="list"
+                  />
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {sortedServices.map((service) => (
@@ -224,6 +255,7 @@ export function ExplorePage() {
                     service={service}
                     categoryName={categoryNameById[service.category_id]}
                     photos={thumbnails[service.id] ?? []}
+                    layout="grid"
                   />
                 ))}
               </div>
