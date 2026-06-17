@@ -10,7 +10,6 @@ import { ServiceFilters } from '@/components/services/ServiceFilters'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useExploreServices, type ExploreFilters } from '@/hooks/useExploreServices'
 import { useCategories } from '@/hooks/useCategories'
-import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import type { NearbyService } from '@/types/database'
 
