@@ -46,6 +46,8 @@ export function ExplorePage() {
   const [view, setView] = useState<'list' | 'map'>('list')
   const [displayMode, setDisplayMode] = useState<'grid' | 'list'>('list')
   const [sort, setSort] = useState<SortOption>('relevance')
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 20
   const [thumbnails, setThumbnails] = useState<Record<string, string[]>>({})
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [searchInput, setSearchInput] = useState('')
@@ -87,6 +89,9 @@ export function ExplorePage() {
 
   const sortedServices = useMemo(() => sortServices(services, sort), [services, sort])
 
+  // Reset to page 0 when filters or sort change
+  useEffect(() => { setPage(0) }, [filters, sort, displayMode])
+
   // Robust thumbnail loading: fetch all photos ordered by position, first one per service wins
   useEffect(() => {
     if (services.length === 0) return
@@ -106,6 +111,9 @@ export function ExplorePage() {
         setThumbnails(map)
       })
   }, [services])
+
+  const totalPages = Math.ceil(sortedServices.length / PAGE_SIZE)
+  const pagedServices = sortedServices.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   const resultsSubtitle = locationLoading
     ? 'Localizando você…'
@@ -237,27 +245,30 @@ export function ExplorePage() {
               <p className="py-12 text-center text-muted-foreground">{emptyMessage}</p>
             ) : displayMode === 'list' ? (
               <div className="flex flex-col gap-3">
-                {sortedServices.map((service) => (
-                  <ServiceCard
-                    key={service.id}
-                    service={service}
-                    categoryName={categoryNameById[service.category_id]}
-                    photos={thumbnails[service.id] ?? []}
-                    layout="list"
-                  />
+                {pagedServices.map((service) => (
+                  <ServiceCard key={service.id} service={service} categoryName={categoryNameById[service.category_id]} photos={thumbnails[service.id] ?? []} layout="list" />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {sortedServices.map((service) => (
-                  <ServiceCard
-                    key={service.id}
-                    service={service}
-                    categoryName={categoryNameById[service.category_id]}
-                    photos={thumbnails[service.id] ?? []}
-                    layout="grid"
-                  />
+                {pagedServices.map((service) => (
+                  <ServiceCard key={service.id} service={service} categoryName={categoryNameById[service.category_id]} photos={thumbnails[service.id] ?? []} layout="grid" />
                 ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {!loading && totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => { setPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+                  ← Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground px-2">
+                  {page + 1} de {totalPages}
+                </span>
+                <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => { setPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+                  Próxima →
+                </Button>
               </div>
             )}
           </div>
