@@ -13,8 +13,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CityCombobox } from '@/components/ui/city-combobox'
 import { useCategories } from '@/hooks/useCategories'
 import { useGeolocation } from '@/hooks/useGeolocation'
+import { BR_STATES, useCities } from '@/hooks/useBrazilianLocations'
 import {
   createService,
   deleteServicePhoto,
@@ -24,37 +26,6 @@ import {
 } from '@/hooks/useServices'
 import { useAuth } from '@/context/AuthContext'
 import type { ServiceWithRelations } from '@/types/database'
-
-// ─── BR States ─────────────────────────────────────────────────────────────────
-const BR_STATES = [
-  { value: 'AC', label: 'Acre' },
-  { value: 'AL', label: 'Alagoas' },
-  { value: 'AP', label: 'Amapá' },
-  { value: 'AM', label: 'Amazonas' },
-  { value: 'BA', label: 'Bahia' },
-  { value: 'CE', label: 'Ceará' },
-  { value: 'DF', label: 'Distrito Federal' },
-  { value: 'ES', label: 'Espírito Santo' },
-  { value: 'GO', label: 'Goiás' },
-  { value: 'MA', label: 'Maranhão' },
-  { value: 'MT', label: 'Mato Grosso' },
-  { value: 'MS', label: 'Mato Grosso do Sul' },
-  { value: 'MG', label: 'Minas Gerais' },
-  { value: 'PA', label: 'Pará' },
-  { value: 'PB', label: 'Paraíba' },
-  { value: 'PR', label: 'Paraná' },
-  { value: 'PE', label: 'Pernambuco' },
-  { value: 'PI', label: 'Piauí' },
-  { value: 'RJ', label: 'Rio de Janeiro' },
-  { value: 'RN', label: 'Rio Grande do Norte' },
-  { value: 'RS', label: 'Rio Grande do Sul' },
-  { value: 'RO', label: 'Rondônia' },
-  { value: 'RR', label: 'Roraima' },
-  { value: 'SC', label: 'Santa Catarina' },
-  { value: 'SP', label: 'São Paulo' },
-  { value: 'SE', label: 'Sergipe' },
-  { value: 'TO', label: 'Tocantins' },
-]
 
 // ─── Steps config ──────────────────────────────────────────────────────────────
 const STEPS = [
@@ -221,6 +192,9 @@ export function ServiceFormPage() {
   const [loading, setLoading] = useState(isEditing)
   const [submitting, setSubmitting] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [selectedState, setSelectedState] = useState<string | null>(null)
+
+  const { cities, loading: citiesLoading } = useCities(selectedState)
 
   const {
     register,
@@ -239,6 +213,7 @@ export function ServiceFormPage() {
   })
 
   const priceType = watch('price_type')
+  const cityValue = watch('city') ?? ''
 
   useEffect(() => {
     if (!id) return
@@ -255,6 +230,7 @@ export function ServiceFormPage() {
       setValue('state', data.state ?? '')
       setValue('tags', data.tags ?? [])
       setCoords({ lat: data.lat, lng: data.lng })
+      if (data.state) setSelectedState(data.state)
       setLoading(false)
     })
   }, [id, setValue])
@@ -474,34 +450,47 @@ export function ServiceFormPage() {
               <p className="text-sm text-muted-foreground">Informe sua localização para aparecer nas buscas.</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="city">Cidade</Label>
-                <Input id="city" placeholder="Ex: São Paulo" {...register('city')} />
-                {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="state">Estado</Label>
-                <Controller
-                  name="state"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger id="state">
-                        <SelectValue placeholder="UF" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BR_STATES.map((s) => (
-                          <SelectItem key={s.value} value={s.value}>
-                            {s.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.state && <p className="text-xs text-destructive">{errors.state.message}</p>}
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="state">Estado</Label>
+              <Controller
+                name="state"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(v) => {
+                      field.onChange(v)
+                      setSelectedState(v)
+                      setValue('city', '')
+                    }}
+                    value={field.value}
+                  >
+                    <SelectTrigger id="state">
+                      <SelectValue placeholder="Selecione o estado…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BR_STATES.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.state && <p className="text-xs text-destructive">{errors.state.message}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Cidade</Label>
+              <CityCombobox
+                cities={cities}
+                value={cityValue}
+                onChange={(v) => setValue('city', v)}
+                loading={citiesLoading}
+                disabled={!selectedState}
+                placeholder={selectedState ? 'Selecione a cidade…' : 'Selecione o estado primeiro'}
+              />
+              {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
             </div>
 
             <div className="space-y-1.5">

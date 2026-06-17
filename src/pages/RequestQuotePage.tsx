@@ -11,8 +11,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { CityCombobox } from '@/components/ui/city-combobox'
 import { useCategories } from '@/hooks/useCategories'
 import { useGeolocation } from '@/hooks/useGeolocation'
+import { BR_STATES, useCities } from '@/hooks/useBrazilianLocations'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 
@@ -21,6 +23,7 @@ const schema = z.object({
   title: z.string().min(5, 'Descreva brevemente o que você precisa'),
   description: z.string().min(20, 'Detalhe um pouco mais para receber propostas certeiras'),
   budget_max: z.string().optional(),
+  state: z.string().min(2, 'Selecione o estado'),
   city: z.string().min(2, 'Informe a cidade'),
 })
 type FormValues = z.infer<typeof schema>
@@ -31,10 +34,15 @@ export function RequestQuotePage() {
   const { categories } = useCategories()
   const { lat, lng } = useGeolocation()
   const [submitting, setSubmitting] = useState(false)
+  const [selectedState, setSelectedState] = useState<string | null>(null)
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>({
+  const { cities, loading: citiesLoading } = useCities(selectedState)
+
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
+
+  const cityValue = watch('city') ?? ''
 
   if (!user) {
     navigate('/login')
@@ -51,7 +59,7 @@ export function RequestQuotePage() {
         description: values.description,
         budget_max: values.budget_max ? Number(values.budget_max) : null,
         city: values.city,
-        state: 'SP',
+        state: values.state,
         lat: lat ?? -23.5505,
         lng: lng ?? -46.6333,
       })
@@ -111,16 +119,43 @@ export function RequestQuotePage() {
               {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="city">Cidade</Label>
-                <Input id="city" placeholder="São Paulo" {...register('city')} />
-                {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="budget_max">Orçamento máx. (R$)</Label>
-                <Input id="budget_max" type="number" placeholder="Opcional" {...register('budget_max')} />
-              </div>
+            <div className="space-y-1.5">
+              <Label>Estado</Label>
+              <Select
+                onValueChange={(v) => {
+                  setValue('state', v)
+                  setSelectedState(v)
+                  setValue('city', '')
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o estado…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BR_STATES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.state && <p className="text-xs text-destructive">{errors.state.message}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Cidade</Label>
+              <CityCombobox
+                cities={cities}
+                value={cityValue}
+                onChange={(v) => setValue('city', v)}
+                loading={citiesLoading}
+                disabled={!selectedState}
+                placeholder={selectedState ? 'Selecione a cidade…' : 'Selecione o estado primeiro'}
+              />
+              {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="budget_max">Orçamento máx. (R$)</Label>
+              <Input id="budget_max" type="number" placeholder="Opcional" {...register('budget_max')} />
             </div>
 
             <Button type="submit" className="w-full" disabled={submitting}>
