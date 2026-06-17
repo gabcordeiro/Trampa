@@ -7,11 +7,11 @@ export interface ExploreFilters {
   lng: number
   radiusKm: number
   categorySlug: string | null
-  state: string | null        // BR state abbreviation, e.g. "SP"
+  state: string | null
   minPrice: number | null
   maxPrice: number | null
-  minRating: number           // 0 = any
-  query: string               // text search query, '' = any
+  minRating: number
+  query: string
 }
 
 function applyClientFilters(services: NearbyService[], filters: ExploreFilters): NearbyService[] {
@@ -27,15 +27,32 @@ function applyClientFilters(services: NearbyService[], filters: ExploreFilters):
   })
 }
 
+async function fetchPhotos(ids: string[]): Promise<Record<string, string[]>> {
+  const { data } = await supabase
+    .from('service_photos')
+    .select('service_id, url, position')
+    .in('service_id', ids)
+    .order('position', { ascending: true })
+
+  const map: Record<string, string[]> = {}
+  for (const row of data ?? []) {
+    if (!map[row.service_id]) map[row.service_id] = []
+    map[row.service_id].push(row.url)
+  }
+  return map
+}
+
 export function useExploreServices(filters: ExploreFilters) {
   const [services, setServices] = useState<NearbyService[]>([])
+  const [photos, setPhotos] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(true)
 
-  const fetchServices = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true)
 
+    let filtered: NearbyService[] = []
+
     if (filters.state) {
-      // State mode: query services table directly filtered by state
       let query = supabase
         .from('services')
         .select('id, provider_id, category_id, title, description, price, price_type, city, state, lat, lng, rating_avg, rating_count, tags, is_featured')
@@ -43,53 +60,46 @@ export function useExploreServices(filters: ExploreFilters) {
         .eq('status', 'approved')
 
       if (filters.categorySlug) {
-        // Join with categories to filter by slug
         const { data: catData } = await supabase
           .from('categories')
           .select('id')
           .eq('slug', filters.categorySlug)
           .single()
-        if (catData) {
-          query = query.eq('category_id', catData.id)
-        }
+        if (catData) query = query.eq('category_id', catData.id)
       }
 
       const { data, error } = await query.limit(200)
-      if (error) {
-        setLoading(false)
-        return
+      if (!error) {
+        const mapped = ((data ?? []) as unknown as NearbyService[]).map((row) => ({
+          ...row,
+          distance_km: 0,
+        }))
+        filtered = applyClientFilters(mapped, filters)
       }
-
-      const mapped = ((data ?? []) as unknown as NearbyService[]).map((row) => ({
-        ...row,
-        distance_km: 0,
-      }))
-
-      setServices(applyClientFilters(mapped, filters))
     } else {
-      // Nearby mode: use nearby_services RPC
       const { data, error } = await supabase.rpc('nearby_services', {
         search_lat: filters.lat,
         search_lng: filters.lng,
         radius_km: filters.radiusKm,
         category_slug: filters.categorySlug ?? null,
       })
-
-      if (error) {
-        setLoading(false)
-        return
+      if (!error) {
+        filtered = applyClientFilters(data ?? [], filters)
       }
-
-      setServices(applyClientFilters(data ?? [], filters))
     }
 
+    // Fetch services and their photos before showing anything — no "Sem foto" flash
+    const photoMap = filtered.length > 0 ? await fetchPhotos(filtered.map((s) => s.id)) : {}
+
+    setServices(filtered)
+    setPhotos(photoMap)
     setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.lat, filters.lng, filters.radiusKm, filters.categorySlug, filters.state, filters.minPrice, filters.maxPrice, filters.minRating, filters.query])
 
   useEffect(() => {
-    fetchServices()
-  }, [fetchServices])
+    fetchAll()
+  }, [fetchAll])
 
-  return { services, loading }
+  return { services, photos, loading }
 }

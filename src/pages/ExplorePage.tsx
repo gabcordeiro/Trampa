@@ -48,7 +48,6 @@ export function ExplorePage() {
   const [sort, setSort] = useState<SortOption>('relevance')
   const [page, setPage] = useState(0)
   const PAGE_SIZE = 20
-  const [thumbnails, setThumbnails] = useState<Record<string, string[]>>({})
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [searchInput, setSearchInput] = useState('')
 
@@ -67,7 +66,7 @@ export function ExplorePage() {
 
   const { lat, lng, loading: locationLoading } = useGeolocation()
   const { categories } = useCategories()
-  const { services, loading } = useExploreServices(filters)
+  const { services, photos, loading } = useExploreServices(filters)
 
   // Update lat/lng in filters when geolocation resolves
   useEffect(() => {
@@ -92,25 +91,6 @@ export function ExplorePage() {
   // Reset to page 0 when filters or sort change
   useEffect(() => { setPage(0) }, [filters, sort, displayMode])
 
-  // Robust thumbnail loading: fetch all photos ordered by position, first one per service wins
-  useEffect(() => {
-    if (services.length === 0) return
-    const ids = services.map((service) => service.id)
-    supabase
-      .from('service_photos')
-      .select('service_id, url, position')
-      .in('service_id', ids)
-      .order('position', { ascending: true })
-      .then(({ data }) => {
-        if (!data) return
-        const map: Record<string, string[]> = {}
-        for (const row of data) {
-          if (!map[row.service_id]) map[row.service_id] = []
-          map[row.service_id].push(row.url)
-        }
-        setThumbnails(map)
-      })
-  }, [services])
 
   const totalPages = Math.ceil(sortedServices.length / PAGE_SIZE)
   const pagedServices = sortedServices.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -246,13 +226,13 @@ export function ExplorePage() {
             ) : displayMode === 'list' ? (
               <div className="flex flex-col gap-3">
                 {pagedServices.map((service) => (
-                  <ServiceCard key={service.id} service={service} categoryName={categoryNameById[service.category_id]} photos={thumbnails[service.id] ?? []} layout="list" />
+                  <ServiceCard key={service.id} service={service} categoryName={categoryNameById[service.category_id]} photos={photos[service.id] ?? []} layout="list" />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {pagedServices.map((service) => (
-                  <ServiceCard key={service.id} service={service} categoryName={categoryNameById[service.category_id]} photos={thumbnails[service.id] ?? []} layout="grid" />
+                  <ServiceCard key={service.id} service={service} categoryName={categoryNameById[service.category_id]} photos={photos[service.id] ?? []} layout="grid" />
                 ))}
               </div>
             )}
