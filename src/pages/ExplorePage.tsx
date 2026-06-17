@@ -1,13 +1,13 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { List, MapIcon } from 'lucide-react'
+import { List, MapIcon, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ServiceCard } from '@/components/services/ServiceCard'
 import { ServiceFilters } from '@/components/services/ServiceFilters'
 import { useGeolocation } from '@/hooks/useGeolocation'
-import { useNearbyServices } from '@/hooks/useServices'
+import { useExploreServices, type ExploreFilters } from '@/hooks/useExploreServices'
 import { useCategories } from '@/hooks/useCategories'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -42,21 +42,32 @@ function sortServices(services: NearbyService[], sort: SortOption): NearbyServic
 }
 
 export function ExplorePage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const categorySlug = searchParams.get('categoria')
-  const [radiusKm, setRadiusKm] = useState(25)
   const [view, setView] = useState<'list' | 'map'>('list')
   const [sort, setSort] = useState<SortOption>('relevance')
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  const [filters, setFilters] = useState<ExploreFilters>({
+    lat: 0,
+    lng: 0,
+    radiusKm: 25,
+    categorySlug: null,
+    state: null,
+    minPrice: null,
+    maxPrice: null,
+    minRating: 0,
+  })
 
   const { lat, lng, loading: locationLoading } = useGeolocation()
   const { categories } = useCategories()
-  const { services, loading } = useNearbyServices({
-    lat: lat ?? 0,
-    lng: lng ?? 0,
-    radiusKm,
-    categorySlug,
-  })
+  const { services, loading } = useExploreServices(filters)
+
+  // Update lat/lng in filters when geolocation resolves
+  useEffect(() => {
+    if (lat !== null && lng !== null) {
+      setFilters((prev) => ({ ...prev, lat, lng }))
+    }
+  }, [lat, lng])
 
   const categoryNameById = useMemo(
     () => Object.fromEntries(categories.map((category) => [category.id, category.name])),
@@ -65,103 +76,134 @@ export function ExplorePage() {
 
   const sortedServices = useMemo(() => sortServices(services, sort), [services, sort])
 
+  // Robust thumbnail loading: fetch all photos ordered by position, first one per service wins
   useEffect(() => {
     if (services.length === 0) return
+    const ids = services.map((service) => service.id)
     supabase
       .from('service_photos')
-      .select('service_id, url')
-      .in('service_id', services.map((service) => service.id))
-      .eq('position', 0)
+      .select('service_id, url, position')
+      .in('service_id', ids)
+      .order('position', { ascending: true })
       .then(({ data }) => {
         if (!data) return
-        setThumbnails(Object.fromEntries(data.map((row) => [row.service_id, row.url])))
+        const map: Record<string, string> = {}
+        for (const row of data) {
+          if (!map[row.service_id]) map[row.service_id] = row.url
+        }
+        setThumbnails(map)
       })
   }, [services])
 
-  const handleCategoryChange = (slug: string | null) => {
-    const next = new URLSearchParams(searchParams)
-    if (slug) next.set('categoria', slug)
-    else next.delete('categoria')
-    setSearchParams(next)
-  }
+  const resultsSubtitle = locationLoading
+    ? 'Localizando você…'
+    : filters.state
+    ? `${services.length} resultados`
+    : `${services.length} resultados perto de você`
+
+  const emptyMessage =
+    filters.state
+      ? 'Nenhum serviço encontrado nesse estado. Tente outra categoria ou estado.'
+      : 'Nenhum serviço encontrado nessa região. Tente aumentar o raio de busca.'
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
+    <div className="mx-auto max-w-7xl px-4 py-6">
+      {/* Page header */}
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Explorar serviços</h1>
-          <p className="text-sm text-muted-foreground">
-            {locationLoading ? 'Localizando você…' : `${services.length} resultados perto de você`}
-          </p>
+          <p className="text-sm text-muted-foreground">{resultsSubtitle}</p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-border p-1 sm:hidden">
+        {/* Mobile controls row */}
+        <div className="flex items-center gap-2 lg:hidden">
           <Button
             size="sm"
-            variant={view === 'list' ? 'default' : 'ghost'}
-            onClick={() => setView('list')}
-            className="flex-1"
+            variant="outline"
+            onClick={() => setFiltersOpen(true)}
+            className="flex items-center gap-1"
           >
-            <List /> Lista
+            <SlidersHorizontal className="size-4" />
+            Filtros
           </Button>
-          <Button
-            size="sm"
-            variant={view === 'map' ? 'default' : 'ghost'}
-            onClick={() => setView('map')}
-            className="flex-1"
-          >
-            <MapIcon /> Mapa
-          </Button>
+          <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+            <Button
+              size="sm"
+              variant={view === 'list' ? 'default' : 'ghost'}
+              onClick={() => setView('list')}
+              className="flex-1"
+            >
+              <List className="size-4" /> Lista
+            </Button>
+            <Button
+              size="sm"
+              variant={view === 'map' ? 'default' : 'ghost'}
+              onClick={() => setView('map')}
+              className="flex-1"
+            >
+              <MapIcon className="size-4" /> Mapa
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <ServiceFilters
-          categorySlug={categorySlug}
-          onCategoryChange={handleCategoryChange}
-          radiusKm={radiusKm}
-          onRadiusChange={setRadiusKm}
-        />
-        <Select value={sort} onValueChange={(value) => setSort(value as SortOption)}>
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(SORT_LABELS) as SortOption[]).map((option) => (
-              <SelectItem key={option} value={option}>
-                {SORT_LABELS[option]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Main layout: sidebar + results + map */}
+      <div className="flex gap-6">
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:block w-[260px] shrink-0">
+          <div className="rounded-lg border border-border bg-card p-4 sticky top-20">
+            <ServiceFilters filters={filters} onFiltersChange={setFilters} />
+          </div>
+        </aside>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
-        <div className={cn(view === 'map' && 'hidden sm:block')}>
-          {loading ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <Skeleton key={index} className="aspect-[4/3] w-full" />
-              ))}
-            </div>
-          ) : services.length === 0 ? (
-            <p className="py-12 text-center text-muted-foreground">
-              Nenhum serviço encontrado nessa região. Tente aumentar o raio de busca.
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {sortedServices.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  categoryName={categoryNameById[service.category_id]}
-                  thumbnailUrl={thumbnails[service.id]}
-                />
-              ))}
-            </div>
+        {/* Results column */}
+        <div className="min-w-0 flex-1">
+          {/* Sort row */}
+          <div className="mb-4 flex items-center justify-end">
+            <Select value={sort} onValueChange={(value) => setSort(value as SortOption)}>
+              <SelectTrigger className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(SORT_LABELS) as SortOption[]).map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {SORT_LABELS[option]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={cn(view === 'map' && 'hidden lg:block')}>
+            {loading ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Skeleton key={index} className="aspect-[4/3] w-full" />
+                ))}
+              </div>
+            ) : services.length === 0 ? (
+              <p className="py-12 text-center text-muted-foreground">{emptyMessage}</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {sortedServices.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    categoryName={categoryNameById[service.category_id]}
+                    thumbnailUrl={thumbnails[service.id]}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Map column */}
+        <div
+          className={cn(
+            'hidden lg:block w-[420px] shrink-0 h-[calc(100vh-6rem)] sticky top-20',
+            view === 'map' && '!block',
           )}
-        </div>
-
-        <div className={cn('h-[420px] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]', view === 'list' && 'hidden sm:block')}>
+        >
           {lat !== null && lng !== null && (
             <Suspense fallback={<Skeleton className="h-full w-full" />}>
               <ServicesMap key={`${lat},${lng}`} services={services} centerLat={lat} centerLng={lng} />
@@ -169,6 +211,27 @@ export function ExplorePage() {
           )}
         </div>
       </div>
+
+      {/* Mobile map view */}
+      {view === 'map' && (
+        <div className="lg:hidden mt-4 h-[calc(100vh-12rem)]">
+          {lat !== null && lng !== null && (
+            <Suspense fallback={<Skeleton className="h-full w-full" />}>
+              <ServicesMap key={`${lat},${lng}`} services={services} centerLat={lat} centerLng={lng} />
+            </Suspense>
+          )}
+        </div>
+      )}
+
+      {/* Mobile filters dialog */}
+      <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Filtros</DialogTitle>
+          </DialogHeader>
+          <ServiceFilters filters={filters} onFiltersChange={setFilters} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
