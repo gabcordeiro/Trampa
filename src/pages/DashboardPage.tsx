@@ -28,6 +28,7 @@ export function DashboardPage() {
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [boostingId, setBoostingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const { startCheckout, loading: checkoutLoading } = useCheckout()
 
   const isPro = profile?.plan === 'pro'
@@ -56,12 +57,15 @@ export function DashboardPage() {
 
   const handleDelete = async (serviceId: string) => {
     if (!confirm('Excluir este anúncio? Esta ação não pode ser desfeita.')) return
+    setDeletingId(serviceId)
     try {
       await deleteService(serviceId)
       setServices((current) => current.filter((s) => s.id !== serviceId))
       toast.success('Anúncio excluído.')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Não foi possível excluir.')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -133,6 +137,22 @@ export function DashboardPage() {
         </Card>
       )}
 
+      {!loading && (
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Total de anúncios', value: services.length },
+            { label: 'Aprovados', value: services.filter(s => s.status === 'approved').length },
+            { label: 'Em análise', value: services.filter(s => s.status === 'pending').length },
+            { label: 'Plano', value: isPro ? 'Pro ✨' : 'Grátis' },
+          ].map(stat => (
+            <div key={stat.label} className="rounded-xl border border-border bg-card px-4 py-3">
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <p className="mt-0.5 text-xl font-bold">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
@@ -191,8 +211,21 @@ export function DashboardPage() {
                         <Pencil /> Editar
                       </Link>
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDelete(service.id)}>
-                      <Trash2 /> Excluir
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(service.id)}
+                      disabled={deletingId === service.id || boostingId !== null}
+                    >
+                      {deletingId === service.id ? (
+                        <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                      ) : (
+                        <Trash2 />
+                      )}
+                      {deletingId === service.id ? 'Excluindo…' : 'Excluir'}
                     </Button>
                   </div>
                 </CardContent>

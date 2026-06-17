@@ -4,7 +4,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Briefcase } from 'lucide-react'
+import { Briefcase, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,6 +30,8 @@ export function RegisterPage() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const {
     register,
@@ -77,22 +79,55 @@ export function RegisterPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" autoComplete="new-password" {...register('password')} />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  {...register('password')}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword(v => !v)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
               {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
               <PasswordStrengthMeter password={password} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                {...register('confirmPassword')}
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirm ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  {...register('confirmPassword')}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowConfirm(v => !v)}
+                  tabIndex={-1}
+                >
+                  {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
               {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={submitting}>
-              Criar conta
+              {submitting ? (
+                <span className="flex items-center gap-2">
+                  <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  Criando conta…
+                </span>
+              ) : 'Criar conta'}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
