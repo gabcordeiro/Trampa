@@ -46,7 +46,7 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm shadow-sm">
         <CardHeader className="items-center text-center">
           <span className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Briefcase className="size-5" />
@@ -66,8 +66,21 @@ export function LoginPage() {
               <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
               {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
+            <div className="flex justify-end">
+              <Link to="/recuperar-senha" className="text-xs text-muted-foreground hover:text-primary hover:underline">
+                Esqueci minha senha
+              </Link>
+            </div>
             <Button type="submit" className="w-full" disabled={submitting}>
-              Entrar
+              {submitting ? (
+                <span className="flex items-center gap-2">
+                  <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  Entrando…
+                </span>
+              ) : 'Entrar'}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">

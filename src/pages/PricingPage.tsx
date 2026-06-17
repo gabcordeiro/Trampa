@@ -30,10 +30,19 @@ const BOOST_FEATURES = [
   'Compra pontual por anúncio',
 ]
 
+const FAQS = [
+  { q: 'Como funciona o pagamento?', a: 'Processamos via Stripe com cartão de crédito. O débito automático ocorre mensalmente para o Plano Pro. Seus dados de pagamento são criptografados e nunca armazenados em nossos servidores.' },
+  { q: 'Posso cancelar a qualquer hora?', a: 'Sim, sem multa ou aviso prévio. Cancele pelo painel do Stripe. Seu plano fica ativo até o fim do período já pago.' },
+  { q: 'O Boost e o Pro se acumulam?', a: 'Sim! Você pode ser assinante Pro e ainda impulsionar anúncios específicos com Boost por 30 dias cada. São produtos complementares.' },
+  { q: 'Existe reembolso?', a: 'Sim, em até 7 dias corridos após a cobrança, conforme o Código de Defesa do Consumidor. Entre em contato pelo chat.' },
+  { q: 'Como funciona o limite de anúncios no plano Grátis?', a: 'No plano Grátis você pode ter até 2 anúncios ativos ao mesmo tempo. Ao atingir o limite, é necessário excluir um anúncio ou fazer upgrade para o Pro para criar novos.' },
+]
+
 export function PricingPage() {
   const { user, profile } = useAuth()
   const { startCheckout, loading } = useCheckout()
   const [boostLoading, setBoostLoading] = useState(false)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const isPro = profile?.plan === 'pro'
 
@@ -60,9 +69,12 @@ export function PricingPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold tracking-tight">Planos e preços</h1>
+        <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-3">
+          Simples e transparente
+        </span>
+        <h1 className="text-4xl font-extrabold tracking-tight">Planos e preços</h1>
         <p className="mt-3 text-lg text-muted-foreground">
-          Comece grátis. Escale quando estiver pronto.
+          Comece grátis. Escale quando estiver pronto. Sem surpresas.
         </p>
       </div>
 
@@ -92,7 +104,7 @@ export function PricingPage() {
         </Card>
 
         {/* Pro */}
-        <Card className="relative flex flex-col border-primary shadow-lg">
+        <Card className="relative flex flex-col border-primary shadow-[0_0_40px_rgba(124,58,237,0.15)]">
           <span className="absolute -top-3 left-1/2 -translate-x-1/2">
             <Badge className="gap-1 bg-primary text-primary-foreground">
               <Sparkles className="size-3" /> Mais popular
@@ -149,18 +161,41 @@ export function PricingPage() {
         </Card>
       </div>
 
-      <div className="mt-12 rounded-xl border border-border bg-muted/40 p-8 text-center">
-        <h3 className="mb-2 text-lg font-semibold">Perguntas frequentes</h3>
-        <div className="mx-auto mt-6 grid max-w-2xl gap-4 text-left text-sm">
-          {[
-            ['Como funciona o pagamento?', 'Processamos via Stripe. Aceita cartão de crédito. O débito automático ocorre mensalmente para o Plano Pro.'],
-            ['Posso cancelar a qualquer hora?', 'Sim. Cancele pelo painel do Stripe. Seu plano fica ativo até o fim do período pago.'],
-            ['O Boost e o Pro se acumulam?', 'Sim. Você pode ser Pro e ainda impulsionar anúncios específicos por 30 dias cada.'],
-            ['Existe reembolso?', 'Sim, em até 7 dias corridos após a cobrança, conforme o Código de Defesa do Consumidor.'],
-          ].map(([q, a]) => (
-            <div key={q} className="space-y-1">
-              <p className="font-medium">{q}</p>
-              <p className="text-muted-foreground">{a}</p>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
+        {[
+          { icon: '🔒', text: 'Pagamento seguro' },
+          { icon: '↩️', text: 'Reembolso em 7 dias' },
+          { icon: '❌', text: 'Cancele quando quiser' },
+          { icon: '🇧🇷', text: 'Suporte em português' },
+        ].map((item) => (
+          <span key={item.text} className="flex items-center gap-1.5">
+            <span>{item.icon}</span> {item.text}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-16">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold">Perguntas frequentes</h2>
+          <p className="mt-1 text-muted-foreground">Tudo que você precisa saber antes de começar.</p>
+        </div>
+        <div className="mx-auto max-w-2xl divide-y divide-border rounded-xl border border-border overflow-hidden">
+          {FAQS.map((faq, i) => (
+            <div key={i}>
+              <button
+                className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left hover:bg-muted/40 transition-colors"
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+              >
+                <span className="font-medium text-sm">{faq.q}</span>
+                <span className={`shrink-0 transition-transform duration-200 text-muted-foreground ${openFaq === i ? 'rotate-180' : ''}`}>
+                  ▼
+                </span>
+              </button>
+              {openFaq === i && (
+                <div className="px-6 pb-4 text-sm text-muted-foreground leading-relaxed">
+                  {faq.a}
+                </div>
+              )}
             </div>
           ))}
         </div>
