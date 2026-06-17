@@ -45,13 +45,14 @@ function sortServices(services: NearbyService[], sort: SortOption): NearbyServic
 export function ExplorePage() {
   const [view, setView] = useState<'list' | 'map'>('list')
   const [sort, setSort] = useState<SortOption>('relevance')
-  const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
+  const [thumbnails, setThumbnails] = useState<Record<string, string[]>>({})
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [searchInput, setSearchInput] = useState('')
 
+  // Default to São Paulo so map + RPC work immediately before geolocation resolves
   const [filters, setFilters] = useState<ExploreFilters>({
-    lat: 0,
-    lng: 0,
+    lat: -23.5505,
+    lng: -46.6333,
     radiusKm: 25,
     categorySlug: null,
     state: null,
@@ -96,9 +97,10 @@ export function ExplorePage() {
       .order('position', { ascending: true })
       .then(({ data }) => {
         if (!data) return
-        const map: Record<string, string> = {}
+        const map: Record<string, string[]> = {}
         for (const row of data) {
-          if (!map[row.service_id]) map[row.service_id] = row.url
+          if (!map[row.service_id]) map[row.service_id] = []
+          map[row.service_id].push(row.url)
         }
         setThumbnails(map)
       })
@@ -221,7 +223,7 @@ export function ExplorePage() {
                     key={service.id}
                     service={service}
                     categoryName={categoryNameById[service.category_id]}
-                    thumbnailUrl={thumbnails[service.id]}
+                    photos={thumbnails[service.id] ?? []}
                   />
                 ))}
               </div>

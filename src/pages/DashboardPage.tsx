@@ -104,7 +104,12 @@ export function DashboardPage() {
             <Badge variant="secondary">Free</Badge>
           )}
         </div>
-        <Button asChild={!atFreeLimit} disabled={atFreeLimit} onClick={atFreeLimit ? handleUpgradePro : undefined}>
+        <Button
+          asChild={!atFreeLimit}
+          disabled={atFreeLimit}
+          onClick={atFreeLimit ? handleUpgradePro : undefined}
+          className={!atFreeLimit ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' : ''}
+        >
           {atFreeLimit ? (
             <span className="flex items-center gap-1.5"><Crown className="size-3.5" /> Assinar Pro para criar</span>
           ) : (

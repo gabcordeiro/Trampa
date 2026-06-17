@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Megaphone, Search, ShieldCheck, Star, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -6,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { FeaturedServiceCard } from '@/components/services/FeaturedServiceCard'
 import { useCategories } from '@/hooks/useCategories'
 import { useFeaturedServices } from '@/hooks/useServices'
+import { supabase } from '@/lib/supabase'
 
 const STEPS = [
   {
@@ -28,6 +30,26 @@ const STEPS = [
 export function HomePage() {
   const { categories } = useCategories()
   const { services: featured, loading: featuredLoading } = useFeaturedServices(8)
+  const [featuredPhotos, setFeaturedPhotos] = useState<Record<string, string[]>>({})
+
+  useEffect(() => {
+    if (featured.length === 0) return
+    const ids = featured.map((s) => s.id)
+    supabase
+      .from('service_photos')
+      .select('service_id, url, position')
+      .in('service_id', ids)
+      .order('position', { ascending: true })
+      .then(({ data }) => {
+        if (!data) return
+        const map: Record<string, string[]> = {}
+        for (const row of data) {
+          if (!map[row.service_id]) map[row.service_id] = []
+          map[row.service_id].push(row.url)
+        }
+        setFeaturedPhotos(map)
+      })
+  }, [featured])
 
   return (
     <div>
@@ -153,7 +175,7 @@ export function HomePage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {featuredLoading
             ? Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} className="aspect-[3/4] w-full" />)
-            : featured.map((service) => <FeaturedServiceCard key={service.id} service={service} />)}
+            : featured.map((service) => <FeaturedServiceCard key={service.id} service={service} photos={featuredPhotos[service.id]} />)}
         </div>
       </section>
 

@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Sparkles, Star } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MapPin, Sparkles, Star } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDistance } from '@/lib/utils'
@@ -8,7 +9,7 @@ import type { NearbyService } from '@/types/database'
 interface ServiceCardProps {
   service: NearbyService
   categoryName?: string
-  thumbnailUrl?: string | null
+  photos: string[]
 }
 
 const PRICE_TYPE_LABEL: Record<NearbyService['price_type'], string> = {
@@ -17,14 +18,30 @@ const PRICE_TYPE_LABEL: Record<NearbyService['price_type'], string> = {
   quote: '',
 }
 
-export function ServiceCard({ service, categoryName, thumbnailUrl }: ServiceCardProps) {
+export function ServiceCard({ service, categoryName, photos }: ServiceCardProps) {
+  const [idx, setIdx] = useState(0)
+  const total = photos.length
+  const src = photos[idx] ?? null
+
+  const prev = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIdx((i) => (i - 1 + total) % total)
+  }
+
+  const next = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIdx((i) => (i + 1) % total)
+  }
+
   return (
     <Link to={`/servicos/${service.id}`} className="group block">
       <Card className="overflow-hidden transition-shadow hover:shadow-md">
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-          {thumbnailUrl ? (
+          {src ? (
             <img
-              src={thumbnailUrl}
+              src={src}
               alt={service.title}
               loading="lazy"
               className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -34,6 +51,39 @@ export function ServiceCard({ service, categoryName, thumbnailUrl }: ServiceCard
               Sem foto
             </div>
           )}
+
+          {/* Photo navigation arrows — only show when multiple photos exist */}
+          {total > 1 && (
+            <>
+              <button
+                onClick={prev}
+                className="absolute left-1.5 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70"
+                aria-label="Foto anterior"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <button
+                onClick={next}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70"
+                aria-label="Próxima foto"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+
+              {/* Dot indicators */}
+              <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
+                {photos.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIdx(i) }}
+                    className={`size-1.5 rounded-full transition-colors ${i === idx ? 'bg-white' : 'bg-white/50'}`}
+                    aria-label={`Foto ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
           {service.is_featured && (
             <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-sm">
               <Sparkles className="size-3" /> Destaque
@@ -47,9 +97,9 @@ export function ServiceCard({ service, categoryName, thumbnailUrl }: ServiceCard
             </span>
           )}
         </div>
+
         <CardContent className="space-y-2 p-4">
           <h3 className="line-clamp-1 font-semibold leading-tight">{service.title}</h3>
-
           <p className="line-clamp-2 text-sm text-muted-foreground">{service.description}</p>
 
           {service.tags.length > 0 && (
