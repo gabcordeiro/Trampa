@@ -74,6 +74,7 @@ export function ServiceFilters({ filters, onFiltersChange }: ServiceFiltersProps
       minPrice: null,
       maxPrice: null,
       minRating: 0,
+      query: filters.query,
     })
   }
 

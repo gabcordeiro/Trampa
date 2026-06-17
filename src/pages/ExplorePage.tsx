@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { List, MapIcon, SlidersHorizontal } from 'lucide-react'
+import { List, MapIcon, Search, SlidersHorizontal, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ServiceCard } from '@/components/services/ServiceCard'
@@ -46,6 +47,7 @@ export function ExplorePage() {
   const [sort, setSort] = useState<SortOption>('relevance')
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [searchInput, setSearchInput] = useState('')
 
   const [filters, setFilters] = useState<ExploreFilters>({
     lat: 0,
@@ -56,6 +58,7 @@ export function ExplorePage() {
     minPrice: null,
     maxPrice: null,
     minRating: 0,
+    query: '',
   })
 
   const { lat, lng, loading: locationLoading } = useGeolocation()
@@ -68,6 +71,12 @@ export function ExplorePage() {
       setFilters((prev) => ({ ...prev, lat, lng }))
     }
   }, [lat, lng])
+
+  // Debounce search input 300ms before applying to filters
+  useEffect(() => {
+    const t = setTimeout(() => setFilters(f => ({ ...f, query: searchInput })), 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
 
   const categoryNameById = useMemo(
     () => Object.fromEntries(categories.map((category) => [category.id, category.name])),
@@ -143,6 +152,29 @@ export function ExplorePage() {
               <MapIcon className="size-4" /> Mapa
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Search bar — full width, above the main 3-column layout */}
+      <div className="relative mb-6 flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            className="pl-9 pr-10"
+            placeholder="Pesquisar por serviço…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="size-4" />
+            </button>
+          )}
         </div>
       </div>
 

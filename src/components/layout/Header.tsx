@@ -62,7 +62,7 @@ export function Header() {
                 </Link>
               </Button>
               <Button size="sm" className="hidden sm:inline-flex" asChild>
-                <Link to="/painel/anuncios/novo">
+                <Link to="/painel">
                   <Plus /> Anunciar
                 </Link>
               </Button>

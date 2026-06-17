@@ -11,6 +11,7 @@ export interface ExploreFilters {
   minPrice: number | null
   maxPrice: number | null
   minRating: number           // 0 = any
+  query: string               // text search query, '' = any
 }
 
 function applyClientFilters(services: NearbyService[], filters: ExploreFilters): NearbyService[] {
@@ -18,6 +19,10 @@ function applyClientFilters(services: NearbyService[], filters: ExploreFilters):
     if (filters.minPrice !== null && (s.price === null || s.price < filters.minPrice)) return false
     if (filters.maxPrice !== null && (s.price === null || s.price > filters.maxPrice)) return false
     if (filters.minRating > 0 && s.rating_avg < filters.minRating) return false
+    if (filters.query.trim()) {
+      const q = filters.query.trim().toLowerCase()
+      if (!s.title.toLowerCase().includes(q) && !s.description.toLowerCase().includes(q)) return false
+    }
     return true
   })
 }
@@ -80,7 +85,7 @@ export function useExploreServices(filters: ExploreFilters) {
 
     setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.lat, filters.lng, filters.radiusKm, filters.categorySlug, filters.state, filters.minPrice, filters.maxPrice, filters.minRating])
+  }, [filters.lat, filters.lng, filters.radiusKm, filters.categorySlug, filters.state, filters.minPrice, filters.maxPrice, filters.minRating, filters.query])
 
   useEffect(() => {
     fetchServices()

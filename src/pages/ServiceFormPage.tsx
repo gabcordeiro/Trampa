@@ -282,7 +282,11 @@ export function ServiceFormPage() {
         navigate(`/painel/anuncios/${created.id}/editar`)
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Não foi possível salvar o anúncio.')
+      if (error instanceof Error && error.message.includes('PLAN_LIMIT')) {
+        toast.error('Limite do plano gratuito atingido. Acesse o painel para assinar o Pro.')
+      } else {
+        toast.error(error instanceof Error ? error.message : 'Não foi possível salvar o anúncio.')
+      }
     } finally {
       setSubmitting(false)
     }
