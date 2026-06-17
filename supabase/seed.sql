@@ -155,7 +155,7 @@ with kw(slug, tags) as (values
 insert into public.service_photos (service_id, url, position)
 select
   s.id,
-  'https://loremflickr.com/640/480/' || kw.tags || '?lock=' || (abs(hashtext(s.id::text || g.pos::text)) % 100000)::text,
+  'https://picsum.photos/seed/' || encode(sha256((s.id::text || g.pos::text)::bytea), 'hex') || '/640/480',
   g.pos
 from public.services s
 join public.categories c on c.id = s.category_id
@@ -202,15 +202,19 @@ begin
   end loop;
 end $$;
 
--- 6) Category cover images for the landing page.
-with kw(slug, tags) as (values
-  ('cleaning','cleaning,housekeeping'),('plumbing','plumber,plumbing'),
-  ('electrical','electrician,electrical'),('painting','painting,wall'),
-  ('gardening','gardening,garden'),('moving','moving,boxes'),
-  ('tech-repair','computer,repair'),('beauty','salon,hairstyle'),
-  ('tutoring','teacher,study'),('pet-care','dog,grooming'),
-  ('events','party,celebration'),('other','tools,handyman')
-)
-update public.categories c
-set cover_url = 'https://loremflickr.com/400/300/' || kw.tags || '?lock=' || (abs(hashtext(c.slug)) % 100000)::text
-from kw where kw.slug = c.slug;
+-- 6) Category cover images for the landing page (Picsum Photos — stable CDN).
+update public.categories set cover_url = case slug
+  when 'cleaning'    then 'https://picsum.photos/seed/cleaning7/640/480'
+  when 'plumbing'    then 'https://picsum.photos/seed/plumber3/640/480'
+  when 'electrical'  then 'https://picsum.photos/seed/electric5/640/480'
+  when 'painting'    then 'https://picsum.photos/seed/painter2/640/480'
+  when 'gardening'   then 'https://picsum.photos/seed/garden42/640/480'
+  when 'moving'      then 'https://picsum.photos/seed/moving17/640/480'
+  when 'tech-repair' then 'https://picsum.photos/seed/laptop99/640/480'
+  when 'beauty'      then 'https://picsum.photos/seed/beauty88/640/480'
+  when 'tutoring'    then 'https://picsum.photos/seed/tutor55/640/480'
+  when 'pet-care'    then 'https://picsum.photos/seed/petdog11/640/480'
+  when 'events'      then 'https://picsum.photos/seed/party33/640/480'
+  when 'other'       then 'https://picsum.photos/seed/tools66/640/480'
+  else 'https://picsum.photos/seed/' || slug || '77/640/480'
+end;
