@@ -104,7 +104,11 @@ export function ContractDetailPage() {
         </CardContent>
       </Card>
 
-      <ChatWindow contractId={contract.id} currentUserId={user.id} />
+      <ChatWindow
+        contractId={contract.id}
+        currentUserId={user.id}
+        otherUser={isClient ? contract.provider : contract.client}
+      />
 
       {isClient && contract.status === 'completed' && !hasReview && (
         <div className="mt-6">

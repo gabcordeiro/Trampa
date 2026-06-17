@@ -5,19 +5,26 @@ import type { Message } from '@/types/database'
 export function useMessages(contractId: string | undefined) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!contractId) return
     let active = true
 
     setLoading(true)
+    setError(null)
     supabase
       .from('messages')
       .select('*')
       .eq('contract_id', contractId)
       .order('created_at', { ascending: true })
-      .then(({ data }) => {
+      .then(({ data, error: queryError }) => {
         if (active) {
+          if (queryError) {
+            setError(queryError.message)
+            setLoading(false)
+            return
+          }
           setMessages(data ?? [])
           setLoading(false)
         }
@@ -40,7 +47,7 @@ export function useMessages(contractId: string | undefined) {
     }
   }, [contractId])
 
-  return { messages, loading }
+  return { messages, loading, error }
 }
 
 export async function sendMessage(contractId: string, senderId: string, content: string) {
