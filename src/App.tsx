@@ -12,6 +12,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { ContractsPage } from '@/pages/ContractsPage'
 import { ContractDetailPage } from '@/pages/ContractDetailPage'
+import { PricingPage } from '@/pages/PricingPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
             <Route path="login" element={<LoginPage />} />
             <Route path="cadastro" element={<RegisterPage />} />
             <Route path="explorar" element={<ExplorePage />} />
+            <Route path="precos" element={<PricingPage />} />
             <Route path="servicos/:id" element={<ServiceDetailPage />} />
 
             <Route element={<ProtectedRoute />}>

@@ -35,6 +35,9 @@ export function Header() {
           <Button variant="ghost" asChild>
             <Link to="/explorar">Explorar</Link>
           </Button>
+          <Button variant="ghost" asChild>
+            <Link to="/precos">Planos</Link>
+          </Button>
           {user && (
             <Button variant="ghost" asChild>
               <Link to="/contratos">Meus contratos</Link>

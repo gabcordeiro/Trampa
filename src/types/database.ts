@@ -2,6 +2,8 @@ export type ServiceStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'pau
 export type PriceType = 'fixed' | 'hourly' | 'quote'
 export type ContractStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled'
 
+export type Plan = 'free' | 'pro'
+
 export type Profile = {
   id: string
   full_name: string
@@ -11,6 +13,9 @@ export type Profile = {
   is_provider: boolean
   city: string | null
   state: string | null
+  plan: Plan
+  plan_expires_at: string | null
+  stripe_customer_id: string | null
   created_at: string
   updated_at: string
 }
@@ -42,6 +47,7 @@ export type Service = {
   rating_count: number
   tags: string[]
   is_featured: boolean
+  featured_until: string | null
   created_at: string
   updated_at: string
 }
