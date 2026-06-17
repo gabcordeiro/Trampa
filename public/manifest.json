@@ -1,0 +1,20 @@
+{
+  "name": "Trampa - Prestadores de Serviço",
+  "short_name": "Trampa",
+  "description": "Encontre os melhores prestadores de serviço perto de você",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "lifestyle", "utilities"],
+  "lang": "pt-BR"
+}

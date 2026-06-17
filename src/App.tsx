@@ -13,6 +13,10 @@ import { ProfilePage } from '@/pages/ProfilePage'
 import { ContractsPage } from '@/pages/ContractsPage'
 import { ContractDetailPage } from '@/pages/ContractDetailPage'
 import { PricingPage } from '@/pages/PricingPage'
+import { RequestQuotePage } from '@/pages/RequestQuotePage'
+import { QuoteRequestsPage } from '@/pages/QuoteRequestsPage'
+import { QuoteDetailPage } from '@/pages/QuoteDetailPage'
+import { MyQuoteRequestsPage } from '@/pages/MyQuoteRequestsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
 function App() {
@@ -35,7 +39,12 @@ function App() {
               <Route path="perfil" element={<ProfilePage />} />
               <Route path="contratos" element={<ContractsPage />} />
               <Route path="contratos/:id" element={<ContractDetailPage />} />
+              <Route path="pedir-orcamento" element={<RequestQuotePage />} />
+              <Route path="orcamentos/meus" element={<MyQuoteRequestsPage />} />
             </Route>
+
+            <Route path="orcamentos" element={<QuoteRequestsPage />} />
+            <Route path="orcamentos/:id" element={<QuoteDetailPage />} />
 
             <Route path="*" element={<NotFoundPage />} />
           </Route>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Search, ShieldCheck, Star, Zap } from 'lucide-react'
+import { ArrowRight, Megaphone, Search, ShieldCheck, Star, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -112,6 +112,25 @@ export function HomePage() {
           {featuredLoading
             ? Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} className="aspect-[3/4] w-full" />)
             : featured.map((service) => <FeaturedServiceCard key={service.id} service={service} />)}
+        </div>
+      </section>
+
+      <section className="bg-primary/5">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-14 text-center sm:flex-row sm:text-left">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <Megaphone className="size-7" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold">Precisa de um serviço específico?</h2>
+            <p className="mt-1 text-muted-foreground">
+              Publique um pedido grátis e receba propostas de prestadores qualificados perto de você em minutos.
+            </p>
+          </div>
+          <Button size="lg" asChild className="shrink-0">
+            <Link to="/pedir-orcamento">
+              Pedir orçamento grátis <ArrowRight />
+            </Link>
+          </Button>
         </div>
       </section>
 

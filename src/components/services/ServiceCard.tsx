@@ -70,10 +70,15 @@ export function ServiceCard({ service, categoryName, thumbnailUrl }: ServiceCard
             {categoryName && <Badge variant="secondary">{categoryName}</Badge>}
           </div>
 
-          <div className="font-semibold text-primary">
-            {service.price_type === 'quote' || service.price === null
-              ? 'A combinar'
-              : `${formatCurrency(service.price)}${PRICE_TYPE_LABEL[service.price_type]}`}
+          <div className="flex items-center justify-between">
+            <div className="font-semibold text-primary">
+              {service.price_type === 'quote' || service.price === null
+                ? 'A combinar'
+                : `${formatCurrency(service.price)}${PRICE_TYPE_LABEL[service.price_type]}`}
+            </div>
+            {service.rating_count >= 10 && (
+              <span className="text-[10px] font-medium text-emerald-600">Muito procurado</span>
+            )}
           </div>
         </CardContent>
       </Card>

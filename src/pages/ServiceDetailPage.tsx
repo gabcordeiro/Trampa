@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MapPin, Star } from 'lucide-react'
+import { MapPin, Megaphone, Share2, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { PhotoLightbox } from '@/components/ui/photo-lightbox'
+import { Link } from 'react-router-dom'
 import { StarRating } from '@/components/contracts/StarRating'
 import { getServiceWithRelations } from '@/hooks/useServices'
 import { useServiceReviews } from '@/hooks/useReviews'
@@ -15,6 +16,8 @@ import { createContract } from '@/hooks/useContracts'
 import { useAuth } from '@/context/AuthContext'
 import { formatCurrency, initialsFromName } from '@/lib/utils'
 import type { ServiceWithRelations } from '@/types/database'
+
+const APP_URL = import.meta.env.VITE_APP_URL ?? 'https://trampa-omega.vercel.app'
 
 const PRICE_TYPE_LABEL: Record<string, string> = { fixed: '', hourly: '/hora', quote: '' }
 
@@ -35,6 +38,12 @@ export function ServiceDetailPage() {
       setLoading(false)
     })
   }, [id])
+
+  const handleShare = () => {
+    const url = `${APP_URL}/servicos/${id}`
+    const text = `Confira este serviço na Trampa: ${service?.title}\n${url}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+  }
 
   const handleHire = async () => {
     if (!user) { navigate('/login'); return }
@@ -165,6 +174,9 @@ export function ServiceDetailPage() {
           <Button className="w-full" onClick={handleHire} disabled={hiring || profile?.id === service.provider_id}>
             Contratar agora
           </Button>
+          <Button variant="outline" className="w-full gap-2" onClick={handleShare}>
+            <Share2 className="size-4" /> Compartilhar no WhatsApp
+          </Button>
           <Separator />
           <div className="flex items-center gap-3">
             <Avatar>
@@ -180,6 +192,18 @@ export function ServiceDetailPage() {
       </div>
 
       <Separator className="my-8" />
+
+      <div className="mb-8 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/40 px-5 py-4">
+        <div>
+          <p className="font-medium">Quer receber propostas de vários prestadores?</p>
+          <p className="text-sm text-muted-foreground">Publique um pedido grátis e compare orçamentos.</p>
+        </div>
+        <Button variant="outline" asChild className="shrink-0 gap-2">
+          <Link to="/pedir-orcamento">
+            <Megaphone className="size-4" /> Pedir orçamento
+          </Link>
+        </Button>
+      </div>
 
       <div>
         <h2 className="mb-4 text-xl font-semibold">Avaliações ({reviews.length})</h2>

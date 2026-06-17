@@ -16,6 +16,7 @@ export type Profile = {
   plan: Plan
   plan_expires_at: string | null
   stripe_customer_id: string | null
+  last_seen_at: string | null
   created_at: string
   updated_at: string
 }
@@ -147,6 +148,41 @@ export type FeaturedService = {
   cover_url: string | null
 }
 
+export type QuoteRequestStatus = 'open' | 'closed' | 'cancelled'
+export type QuoteStatus = 'pending' | 'accepted' | 'rejected'
+
+export type QuoteRequest = {
+  id: string
+  client_id: string
+  category_id: string | null
+  title: string
+  description: string
+  city: string | null
+  state: string | null
+  lat: number | null
+  lng: number | null
+  budget_max: number | null
+  status: QuoteRequestStatus
+  quote_count: number
+  created_at: string
+  expires_at: string
+}
+
+export type Quote = {
+  id: string
+  request_id: string
+  provider_id: string
+  price: number | null
+  message: string
+  status: QuoteStatus
+  created_at: string
+}
+
+export type NearbyQuoteRequest = QuoteRequest & {
+  category_name: string | null
+  distance_km: number
+}
+
 type Relationships = {
   Relationships: []
 }
@@ -200,6 +236,16 @@ export type Database = {
         }
         Update: Partial<Review>
       } & Relationships
+      quote_requests: {
+        Row: QuoteRequest
+        Insert: Partial<QuoteRequest> & { client_id: string; title: string; description: string }
+        Update: Partial<QuoteRequest>
+      } & Relationships
+      quotes: {
+        Row: Quote
+        Insert: Partial<Quote> & { request_id: string; provider_id: string; message: string }
+        Update: Partial<Quote>
+      } & Relationships
     }
     Views: Record<string, never>
     Functions: {
@@ -210,6 +256,10 @@ export type Database = {
       featured_services: {
         Args: { limit_count?: number }
         Returns: FeaturedService[]
+      }
+      nearby_quote_requests: {
+        Args: { search_lat: number; search_lng: number; radius_km?: number }
+        Returns: NearbyQuoteRequest[]
       }
     }
   }

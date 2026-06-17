@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Briefcase, LogOut, MessageSquare, Plus, User as UserIcon } from 'lucide-react'
+import { Briefcase, LogOut, Megaphone, MessageSquare, Plus, User as UserIcon } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -36,6 +36,9 @@ export function Header() {
             <Link to="/explorar">Explorar</Link>
           </Button>
           <Button variant="ghost" asChild>
+            <Link to="/orcamentos">Orçamentos</Link>
+          </Button>
+          <Button variant="ghost" asChild>
             <Link to="/precos">Planos</Link>
           </Button>
           {user && (
@@ -45,7 +48,7 @@ export function Header() {
           )}
           {profile?.is_provider && (
             <Button variant="ghost" asChild>
-              <Link to="/painel">Painel do prestador</Link>
+              <Link to="/painel">Painel</Link>
             </Button>
           )}
         </nav>
@@ -53,6 +56,11 @@ export function Header() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
+              <Button size="sm" variant="outline" className="hidden sm:inline-flex" asChild>
+                <Link to="/pedir-orcamento">
+                  <Megaphone /> Pedir orçamento
+                </Link>
+              </Button>
               <Button size="sm" className="hidden sm:inline-flex" asChild>
                 <Link to="/painel/anuncios/novo">
                   <Plus /> Anunciar

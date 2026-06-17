@@ -22,6 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const loadProfile = async (userId: string) => {
+    // Refresh last_seen_at on every profile load (acts as "online" heartbeat)
+    await supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', userId)
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
     setProfile(data ?? null)
   }
