@@ -84,6 +84,7 @@ export interface ServiceInput {
   state: string | null
   lat: number | null
   lng: number | null
+  tags?: string[]
 }
 
 export async function createService(providerId: string, input: ServiceInput): Promise<Service> {
