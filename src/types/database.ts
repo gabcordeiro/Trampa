@@ -17,6 +17,7 @@ export type Profile = {
   plan_expires_at: string | null
   stripe_customer_id: string | null
   last_seen_at: string | null
+  role: 'user' | 'admin' | 'reviewer'
   created_at: string
   updated_at: string
 }

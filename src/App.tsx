@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
+import { AdminRoute } from '@/components/layout/AdminRoute'
 import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
@@ -18,6 +19,8 @@ import { QuoteRequestsPage } from '@/pages/QuoteRequestsPage'
 import { QuoteDetailPage } from '@/pages/QuoteDetailPage'
 import { MyQuoteRequestsPage } from '@/pages/MyQuoteRequestsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { AdminPage } from '@/pages/AdminPage'
+import { ReviewPage } from '@/pages/ReviewPage'
 
 function App() {
   return (
@@ -45,6 +48,13 @@ function App() {
 
             <Route path="orcamentos" element={<QuoteRequestsPage />} />
             <Route path="orcamentos/:id" element={<QuoteDetailPage />} />
+
+            <Route element={<AdminRoute allowedRoles={['admin']} />}>
+              <Route path="admin" element={<AdminPage />} />
+            </Route>
+            <Route element={<AdminRoute allowedRoles={['admin', 'reviewer']} />}>
+              <Route path="revisar" element={<ReviewPage />} />
+            </Route>
 
             <Route path="*" element={<NotFoundPage />} />
           </Route>

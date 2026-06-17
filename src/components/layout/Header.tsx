@@ -51,6 +51,16 @@ export function Header() {
               <Link to="/painel">Painel</Link>
             </Button>
           )}
+          {profile?.role === 'admin' && (
+            <Button variant="ghost" asChild>
+              <Link to="/admin">Admin</Link>
+            </Button>
+          )}
+          {(profile?.role === 'admin' || profile?.role === 'reviewer') && (
+            <Button variant="ghost" asChild>
+              <Link to="/revisar">Revisar</Link>
+            </Button>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
