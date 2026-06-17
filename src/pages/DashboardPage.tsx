@@ -100,10 +100,14 @@ export function DashboardPage() {
             <Badge variant="secondary">Free</Badge>
           )}
         </div>
-        <Button asChild disabled={atFreeLimit}>
-          <Link to="/painel/anuncios/novo">
-            <Plus /> Novo anúncio
-          </Link>
+        <Button asChild={!atFreeLimit} disabled={atFreeLimit} onClick={atFreeLimit ? handleUpgradePro : undefined}>
+          {atFreeLimit ? (
+            <span className="flex items-center gap-1.5"><Crown className="size-3.5" /> Assinar Pro para criar</span>
+          ) : (
+            <Link to="/painel/anuncios/novo">
+              <Plus /> Novo anúncio
+            </Link>
+          )}
         </Button>
       </div>
 
