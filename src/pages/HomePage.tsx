@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { ArrowRight, Megaphone, Search, ShieldCheck, Star, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -8,6 +8,7 @@ import { FeaturedServiceCard } from '@/components/services/FeaturedServiceCard'
 import { useCategories } from '@/hooks/useCategories'
 import { useFeaturedServices } from '@/hooks/useServices'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/context/AuthContext'
 
 const STEPS = [
   {
@@ -28,6 +29,9 @@ const STEPS = [
 ]
 
 export function HomePage() {
+  const { user } = useAuth()
+  if (user) return <Navigate to="/explorar" replace />
+
   const { categories } = useCategories()
   const { services: featured, loading: featuredLoading } = useFeaturedServices(8)
   const [featuredPhotos, setFeaturedPhotos] = useState<Record<string, string[]>>({})

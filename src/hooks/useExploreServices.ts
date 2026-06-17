@@ -8,6 +8,7 @@ export interface ExploreFilters {
   radiusKm: number
   categorySlug: string | null
   state: string | null
+  city: string | null
   minPrice: number | null
   maxPrice: number | null
   minRating: number
@@ -19,6 +20,7 @@ function applyClientFilters(services: NearbyService[], filters: ExploreFilters):
     if (filters.minPrice !== null && (s.price === null || s.price < filters.minPrice)) return false
     if (filters.maxPrice !== null && (s.price === null || s.price > filters.maxPrice)) return false
     if (filters.minRating > 0 && s.rating_avg < filters.minRating) return false
+    if (filters.city && s.city?.toLowerCase() !== filters.city.toLowerCase()) return false
     if (filters.query.trim()) {
       const q = filters.query.trim().toLowerCase()
       if (!s.title.toLowerCase().includes(q) && !s.description.toLowerCase().includes(q)) return false
@@ -68,6 +70,10 @@ export function useExploreServices(filters: ExploreFilters) {
         if (catData) query = query.eq('category_id', catData.id)
       }
 
+      if (filters.city) {
+        query = query.eq('city', filters.city)
+      }
+
       const { data, error } = await query.limit(200)
       if (!error) {
         const mapped = ((data ?? []) as unknown as NearbyService[]).map((row) => ({
@@ -95,7 +101,7 @@ export function useExploreServices(filters: ExploreFilters) {
     setPhotos(photoMap)
     setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.lat, filters.lng, filters.radiusKm, filters.categorySlug, filters.state, filters.minPrice, filters.maxPrice, filters.minRating, filters.query])
+  }, [filters.lat, filters.lng, filters.radiusKm, filters.categorySlug, filters.state, filters.city, filters.minPrice, filters.maxPrice, filters.minRating, filters.query])
 
   useEffect(() => {
     fetchAll()

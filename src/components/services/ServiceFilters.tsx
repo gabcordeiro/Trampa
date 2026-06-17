@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { useCategories } from '@/hooks/useCategories'
+import { useCities } from '@/hooks/useBrazilianLocations'
 import type { ExploreFilters } from '@/hooks/useExploreServices'
 
 const BR_STATES = [
@@ -46,6 +47,7 @@ interface ServiceFiltersProps {
 
 export function ServiceFilters({ filters, onFiltersChange }: ServiceFiltersProps) {
   const { categories } = useCategories()
+  const { cities, loading: citiesLoading } = useCities(filters.state)
   const isStateMode = filters.state !== null
 
   const update = (partial: Partial<ExploreFilters>) => {
@@ -71,6 +73,7 @@ export function ServiceFilters({ filters, onFiltersChange }: ServiceFiltersProps
       radiusKm: 25,
       categorySlug: null,
       state: null,
+      city: null,
       minPrice: null,
       maxPrice: null,
       minRating: 0,
@@ -116,7 +119,7 @@ export function ServiceFilters({ filters, onFiltersChange }: ServiceFiltersProps
             </Label>
             <Select
               value={filters.state ?? ''}
-              onValueChange={(value) => update({ state: value })}
+              onValueChange={(value) => onFiltersChange({ ...filters, state: value === 'all' ? null : value, city: null })}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione o estado" />
@@ -130,6 +133,22 @@ export function ServiceFilters({ filters, onFiltersChange }: ServiceFiltersProps
               </SelectContent>
             </Select>
           </div>
+          {filters.state && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Cidade</label>
+              <select
+                value={filters.city ?? ''}
+                onChange={(e) => onFiltersChange({ ...filters, city: e.target.value || null })}
+                disabled={citiesLoading}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              >
+                <option value="">Todas as cidades</option>
+                {cities.map((city) => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <Separator />
         </>
       )}

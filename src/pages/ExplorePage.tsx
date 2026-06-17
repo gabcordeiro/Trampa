@@ -57,6 +57,7 @@ export function ExplorePage() {
     radiusKm: 25,
     categorySlug: null,
     state: null,
+    city: null,
     minPrice: null,
     maxPrice: null,
     minRating: 0,
