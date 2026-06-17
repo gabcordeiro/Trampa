@@ -4,7 +4,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Check, Loader2, MapPin, Trash2, Upload, X } from 'lucide-react'
+import { Check, GripVertical, Loader2, MapPin, Trash2, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,6 +25,8 @@ import {
   uploadServicePhoto,
 } from '@/hooks/useServices'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
 import type { ServiceWithRelations } from '@/types/database'
 
 // ─── Steps config ──────────────────────────────────────────────────────────────
@@ -194,6 +196,10 @@ export function ServiceFormPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [selectedState, setSelectedState] = useState<string | null>(null)
 
+  // Drag-to-reorder state
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
   const { cities, loading: citiesLoading } = useCities(selectedState)
 
   const {
@@ -311,6 +317,21 @@ export function ServiceFormPage() {
     if (!service) return
     await deleteServicePhoto(photoId)
     setService({ ...service, photos: service.photos.filter((photo) => photo.id !== photoId) })
+  }
+
+  const reorderPhotos = async (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex || !service) return
+    const reordered = [...service.photos]
+    const [moved] = reordered.splice(fromIndex, 1)
+    reordered.splice(toIndex, 0, moved)
+    // Optimistically update UI
+    setService({ ...service, photos: reordered })
+    // Persist new positions to DB
+    await Promise.all(
+      reordered.map((photo, idx) =>
+        supabase.from('service_photos').update({ position: idx }).eq('id', photo.id)
+      )
+    )
   }
 
   if (loading) {
@@ -518,6 +539,23 @@ export function ServiceFormPage() {
                 </p>
               )}
             </div>
+
+            {coords.lat !== null && coords.lng !== null && (
+              <div className="space-y-1.5">
+                <Label>Localização no mapa</Label>
+                <div className="overflow-hidden rounded-lg border border-border">
+                  <img
+                    src={`https://staticmap.openstreetmap.de/staticmap.php?center=${coords.lat},${coords.lng}&zoom=14&size=600x200&markers=${coords.lat},${coords.lng},red-pushpin`}
+                    alt="Localização no mapa"
+                    className="w-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Localização capturada com sucesso.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -536,12 +574,25 @@ export function ServiceFormPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-3 gap-3">
-                    {service.photos.map((photo) => (
+                    {service.photos.map((photo, i) => (
                       <div
                         key={photo.id}
-                        className="group relative aspect-square overflow-hidden rounded-lg bg-muted"
+                        draggable
+                        onDragStart={() => setDragIndex(i)}
+                        onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i) }}
+                        onDrop={() => { reorderPhotos(dragIndex!, i); setDragIndex(null); setDragOverIndex(null) }}
+                        onDragEnd={() => { setDragIndex(null); setDragOverIndex(null) }}
+                        className={cn(
+                          'group relative aspect-square overflow-hidden rounded-lg bg-muted cursor-grab active:cursor-grabbing',
+                          dragOverIndex === i && dragIndex !== i && 'ring-2 ring-primary ring-offset-1'
+                        )}
                       >
                         <img src={photo.url} alt="" className="size-full object-cover" />
+                        {/* Drag handle */}
+                        <div className="absolute left-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          <GripVertical className="size-3.5" />
+                        </div>
+                        {/* Delete button */}
                         <button
                           type="button"
                           onClick={() => handlePhotoDelete(photo.id)}
@@ -549,6 +600,12 @@ export function ServiceFormPage() {
                         >
                           <Trash2 className="size-3.5" />
                         </button>
+                        {/* Cover badge */}
+                        {i === 0 && (
+                          <span className="absolute left-1.5 bottom-1.5 rounded-full bg-primary/90 px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                            Capa
+                          </span>
+                        )}
                       </div>
                     ))}
                     <button
@@ -561,6 +618,9 @@ export function ServiceFormPage() {
                     </button>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handlePhotoUpload} />
+                  <p className="text-xs text-muted-foreground">
+                    Arraste as fotos para reordenar. A primeira foto será a capa do anúncio.
+                  </p>
                 </CardContent>
               </Card>
             ) : (
